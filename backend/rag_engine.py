@@ -9,6 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 load_dotenv()
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -32,7 +33,7 @@ def split_documents(documents):
 
 def create_vectorstore(chunks):
     embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name="all-MiniLM-L6-v2"
     )
     vectorstore = Chroma.from_documents(
         documents=chunks,
@@ -108,12 +109,17 @@ def create_qa_chain(vectorstore, language="english"):
 
 
 def initialize_rag():
-    if not os.path.exists("vectorstore/") or not os.listdir("vectorstore/"):
+    if os.path.exists("vectorstore/") and os.listdir("vectorstore/"):
+        print("Loading existing vector store...")
+        vectorstore = load_vectorstore()
+    elif os.path.exists("data/") and os.listdir("data/"):
         print("Building vector store for first time...")
         docs = load_documents()
         chunks = split_documents(docs)
         vectorstore = create_vectorstore(chunks)
     else:
-        print("Loading existing vector store...")
-        vectorstore = load_vectorstore()
+        print("No data found - creating empty vectorstore...")
+        from langchain_core.documents import Document
+        dummy = [Document(page_content="GSTMitra AI is ready.", metadata={})]
+        vectorstore = create_vectorstore(dummy)
     return vectorstore
