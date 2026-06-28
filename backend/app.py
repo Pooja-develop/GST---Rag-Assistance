@@ -15,7 +15,7 @@ vectorstore = initialize_rag()
 init_db()
 print("Ready!")
 
-
+# structured prompt gets more useful answers than just passing raw notice text
 @app.route('/ask', methods=['POST'])
 def ask_question():
     data = request.json
@@ -87,7 +87,8 @@ def check_itc():
         return jsonify({'error': str(e)}), 500
 
 
-
+# penalty calc uses hardcoded CBIC rules, not RAG - the rules are fixed by law
+# so no need to query the vector store for this one
 @app.route('/calculate-penalty', methods=['POST'])
 def calculate_penalty():
     data = request.json
@@ -131,7 +132,7 @@ def calculate_penalty():
     })
 
 
-
+# hardcoded from CBIC official calendar - these dates don't change frequently
 @app.route('/get-deadlines', methods=['GET'])
 def get_deadlines():
     business_type = request.args.get('business_type', 'regular')
