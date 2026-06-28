@@ -10,17 +10,11 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 load_dotenv()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-
 def load_documents():
     loader = PyPDFDirectoryLoader("data/")
     documents = loader.load()
     print(f"Loaded {len(documents)} pages")
     return documents
-
-
 def split_documents(documents):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -29,8 +23,6 @@ def split_documents(documents):
     chunks = splitter.split_documents(documents)
     print(f"Created {len(chunks)} chunks")
     return chunks
-
-
 def create_vectorstore(chunks):
     embeddings = HuggingFaceEmbeddings(
         model_name="all-MiniLM-L6-v2"
@@ -42,19 +34,15 @@ def create_vectorstore(chunks):
     )
     print("Vector store created!")
     return vectorstore
-
-
 def load_vectorstore():
     embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name="all-MiniLM-L6-v2"
     )
     vectorstore = Chroma(
         persist_directory="vectorstore/",
         embedding_function=embeddings
     )
     return vectorstore
-
-
 def get_prompt(language="english"):
     if language == "tamil":
         lang_instruction = "Answer in Tamil language."
@@ -80,15 +68,13 @@ def get_prompt(language="english"):
         template=template,
         input_variables=["context", "question"]
     )
-
-
 def create_qa_chain(vectorstore, language="english"):
     llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-    api_key=os.getenv("GROQ_API_KEY"),
-    temperature=0.3
-)
-
+        model="llama-3.1-8b-instant",
+        api_key=os.getenv("GROQ_API_KEY"),
+        temperature=0.3
+    )
+    # k=3 gives enough context without hitting Groq's token limits
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     prompt = get_prompt(language)
 
@@ -106,8 +92,6 @@ def create_qa_chain(vectorstore, language="english"):
     )
 
     return chain, retriever
-
-
 def initialize_rag():
     if os.path.exists("vectorstore/") and os.listdir("vectorstore/"):
         print("Loading existing vector store...")
